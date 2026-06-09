@@ -1,0 +1,26 @@
+{
+  "tokenizer": "microsoft/codebert-base",
+  "model_limit": 512,
+  "devign": {
+    "n": 27318,
+    "mean": 1115.9,
+    "median": 484,
+    "p90": 2423,
+    "p95": 3791,
+    "p99": 8810,
+    "max": 90860,
+    "over_512": 13176,
+    "over_512_pct": 48.23
+  },
+  "diversevul": {
+    "n": 330492,
+    "mean": 636.3,
+    "median": 238,
+    "p90": 1302,
+    "p95": 2179,
+    "p99": 6455,
+    "max": 278203,
+    "over_512": 91130,
+    "over_512_pct": 27.57
+  }
+}

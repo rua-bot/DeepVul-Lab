@@ -1,0 +1,19 @@
+{
+  "accuracy": 0.7931577256665596,
+  "precision": 0.16138691883372736,
+  "recall": 0.4780578898225957,
+  "f1": 0.2413102391893484,
+  "mcc": 0.18505152503573888,
+  "tn": 23667,
+  "fp": 5321,
+  "fn": 1118,
+  "tp": 1024,
+  "roc_auc": 0.7209378519357699,
+  "pr_auc": 0.17113653605689544,
+  "model": "microsoft/codebert-base",
+  "dataset": "diversevul",
+  "seed": 42,
+  "max_len": 512,
+  "epochs": 4,
+  "text_field": "func_sliced"
+}

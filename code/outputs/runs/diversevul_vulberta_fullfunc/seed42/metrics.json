@@ -1,0 +1,19 @@
+{
+  "accuracy": 0.7670414391262448,
+  "precision": 0.14865236523652364,
+  "recall": 0.5046685340802988,
+  "f1": 0.2296579562353941,
+  "mcc": 0.17414589257168955,
+  "tn": 22797,
+  "fp": 6191,
+  "fn": 1061,
+  "tp": 1081,
+  "roc_auc": 0.7030297446240352,
+  "pr_auc": 0.15894756263188975,
+  "model": "claudios/VulBERTa-mlm",
+  "dataset": "diversevul",
+  "seed": 42,
+  "max_len": 512,
+  "epochs": 3,
+  "text_field": "func"
+}

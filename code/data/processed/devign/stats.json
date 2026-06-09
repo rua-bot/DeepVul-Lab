@@ -1,0 +1,28 @@
+{
+  "dataset": "devign",
+  "seed": 42,
+  "raw_count": 27318,
+  "removed_dedup": 743,
+  "after_dedup": 26575,
+  "split_strategy": "predefined_leakage_cleaned",
+  "splits": {
+    "train": {
+      "n": 21371,
+      "pos": 9781,
+      "pos_rate": 0.4577,
+      "n_projects": 2
+    },
+    "validation": {
+      "n": 2613,
+      "pos": 1133,
+      "pos_rate": 0.4336,
+      "n_projects": 2
+    },
+    "test": {
+      "n": 2591,
+      "pos": 1181,
+      "pos_rate": 0.4558,
+      "n_projects": 2
+    }
+  }
+}

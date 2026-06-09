@@ -1,0 +1,19 @@
+{
+  "accuracy": 0.6306445387881127,
+  "precision": 0.5955631399317406,
+  "recall": 0.5910245554614734,
+  "f1": 0.5932851678708032,
+  "mcc": 0.2550184136591194,
+  "tn": 936,
+  "fp": 474,
+  "fn": 483,
+  "tp": 698,
+  "roc_auc": 0.6958912089165931,
+  "pr_auc": 0.685793164143616,
+  "model": "microsoft/codebert-base",
+  "dataset": "devign",
+  "seed": 1,
+  "max_len": 512,
+  "epochs": 4,
+  "text_field": "func_sliced"
+}

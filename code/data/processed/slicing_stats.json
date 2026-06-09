@@ -1,0 +1,36 @@
+{
+  "devign": {
+    "train": {
+      "n": 21371,
+      "trunc_full": 0.4675,
+      "trunc_sliced": 0.2475
+    },
+    "validation": {
+      "n": 2613,
+      "trunc_full": 0.472,
+      "trunc_sliced": 0.254
+    },
+    "test": {
+      "n": 2591,
+      "trunc_full": 0.4845,
+      "trunc_sliced": 0.253
+    }
+  },
+  "diversevul": {
+    "train": {
+      "n": 249043,
+      "trunc_full": 0.451,
+      "trunc_sliced": 0.1835
+    },
+    "validation": {
+      "n": 31130,
+      "trunc_full": 0.2365,
+      "trunc_sliced": 0.1275
+    },
+    "test": {
+      "n": 31130,
+      "trunc_full": 0.2175,
+      "trunc_sliced": 0.0995
+    }
+  }
+}

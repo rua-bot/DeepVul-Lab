@@ -1,0 +1,19 @@
+{
+  "accuracy": 0.6719413353917406,
+  "precision": 0.6249056603773585,
+  "recall": 0.7011007620660458,
+  "f1": 0.6608140462889066,
+  "mcc": 0.34734426594066065,
+  "tn": 913,
+  "fp": 497,
+  "fn": 353,
+  "tp": 828,
+  "roc_auc": 0.7557362134505557,
+  "pr_auc": 0.7489936591089366,
+  "model": "microsoft/unixcoder-base",
+  "dataset": "devign",
+  "seed": 1,
+  "max_len": 512,
+  "epochs": 4,
+  "text_field": "func"
+}

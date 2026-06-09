@@ -1,0 +1,19 @@
+{
+  "accuracy": 0.6013122346584331,
+  "precision": 0.5578125,
+  "recall": 0.6045723962743438,
+  "f1": 0.5802519301097115,
+  "mcc": 0.20237341454680619,
+  "tn": 844,
+  "fp": 566,
+  "fn": 467,
+  "tp": 714,
+  "roc_auc": 0.6595945856678738,
+  "pr_auc": 0.6188911218778159,
+  "model": "claudios/VulBERTa-mlm",
+  "dataset": "devign",
+  "seed": 1,
+  "max_len": 512,
+  "epochs": 4,
+  "text_field": "func"
+}
