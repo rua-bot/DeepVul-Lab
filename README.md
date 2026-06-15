@@ -1,76 +1,56 @@
-# DeepVul-Lab
+# DeepVul-Lab 🔍
 
-> 🔬 面向 C/C++ 函数级漏洞检测的受控实证研究 —— 在严格评估协议下，系统比较领域预训练、结构感知骨干、关键上下文抽取与阈值校准等提升路径的真实效果。
+**面向 C/C++ 函数级漏洞检测的严谨评估与组合提升流水线**
 
----
-
-## ✨ 核心亮点
-
-- **方法学严谨**：统一数据模式、精确 + 近重复去重、项目级划分防泄漏，杜绝"记忆样本"带来的虚高指标
-- **多骨干横向对比**：支持 CodeBERT、VulBERTa、GraphCodeBERT、UniXcoder 等预训练模型在同一协议下公平评测
-- **类别不平衡友好**：逆频率类别加权交叉熵 + F1 / MCC / PR-AUC 等稳健指标，避免 Accuracy 误导
-- **多种子统计聚合**：默认 3 个随机种子（42 / 1 / 2），报告均值 ± 标准差，区分真实提升与运行噪声
-- **关键上下文抽取**：轻量静态启发式切片，无需外部解析器，缓解 512-token 截断问题
-- **决策阈值校准**：复用已训练检查点，在验证集上搜索最优 F1 / MCC 阈值，无需重训练
-- **端到端可复现**：离线模式运行、分词结果磁盘缓存、逐种子指标与聚合摘要完整留存
+DeepVul-Lab 在 Devign 与 DiverseVul 两个公开基准上，提供一条可复现的端到端实验流水线：从去重与防泄漏划分，到多骨干微调、阈值校准与多种子集成，系统审计常见"提升手段"的真实有效性，并构建稳健超越 CodeBERT 基线的组合检测系统。
 
 ---
 
-## 🏗️ 项目架构
+## ✨ Key Features
+
+- **严谨数据治理** — 精确去重（SHA-1）+ 近重复去重（MinHash LSH），DiverseVul 采用项目级 80/10/10 划分，杜绝记忆泄漏与风格泄漏
+- **统一实验协议** — 两数据集归一化为同一 JSONL 模式，所有骨干共享一致的微调超参与评价指标（F1、MCC、PR-AUC 等）
+- **多骨干横向对比** — 支持 CodeBERT、VulBERTa、GraphCodeBERT、UniXcoder 及关键上下文切片输入
+- **不平衡鲁棒训练** — 逆频率类别加权、Focal Loss、随机过采样，适配 DiverseVul 约 7% 正样本率
+- **零额外训练的后处理** — 验证集阈值校准与 3 种子软投票集成，降低种子方差
+- **可复现结果汇总** — 一键编译对比表、最优系统提升阶梯与可视化图表
+
+---
+
+## 🏗 Architecture
 
 ```
 DeepVul-Lab/
-├── code/                              # 核心代码与实验产物
-│   ├── scripts/                       # 可执行脚本（流水线入口）
-│   │   ├── user_setup.sh              # 环境初始化：安装依赖、下载数据集与模型
-│   │   ├── build_dataset.py           # 数据治理：加载 → 去重 → 划分 → 写出 JSONL
-│   │   ├── build_sliced.py            # 关键上下文抽取：生成 func_sliced / func_marked 字段
-│   │   ├── analyze_lengths.py         # 函数 token 长度分布与截断率分析
-│   │   ├── train.py                   # 多随机种子微调与指标聚合
-│   │   ├── tune_threshold.py          # 验证集阈值搜索 + 测试集报告
-│   │   ├── compile_results.py         # 汇总所有实验 run，生成对比表与柱状图
-│   │   ├── smoke_train.py             # 端到端冒烟测试（验证训练栈可用性）
-│   │   ├── vulberta_load_test.py      # VulBERTa 兼容性检测
-│   │   └── tok_diag.py                # Tokenizer 诊断工具
-│   ├── src/                           # 可复用库模块
-│   │   ├── data/
-│   │   │   ├── loaders.py             # Devign / DiverseVul 统一加载器
-│   │   │   ├── dedup.py               # 精确去重（SHA-1）+ 近重复去重（MinHash LSH）
-│   │   │   ├── splitting.py           # 项目级划分与标签统计
-│   │   │   ├── slicing.py             # 关键上下文抽取与结构标记
-│   │   │   └── jsonl_dataset.py       # 处理后 JSONL 数据读取
-│   │   ├── training/
-│   │   │   └── experiment.py          # 单次微调实验（分词缓存、类别加权、Trainer 封装）
-│   │   ├── metrics.py                 # F1 / MCC / PR-AUC 等指标计算
-│   │   └── utils/
-│   │       └── gpu.py                 # 共享服务器动态 GPU 选择
-│   ├── data/
-│   │   └── processed/                 # 去重 + 划分后的 JSONL 数据集
-│   └── outputs/
-│       ├── runs/                      # 各实验配置的多种子结果（summary.json、metrics.json）
-│       ├── results_table.md           # 跨实验对比表
-│       └── length_stats.json          # 截断分析统计
-├── report/
-│   └── 期末实验报告.md                 # 完整实验报告（研究问题、方法、结果与分析）
-└── outputs/
-    └── logs/                          # 训练日志
+├── code/
+│   ├── src/                        # 核心库
+│   │   ├── data/                   # 数据加载、去重、划分、切片
+│   │   ├── training/experiment.py  # 统一微调入口（Trainer 封装）
+│   │   ├── metrics.py              # 评价指标与阈值搜索
+│   │   └── utils/gpu.py            # 自动选取空闲 GPU
+│   ├── scripts/                    # 命令行工具
+│   │   ├── build_dataset.py        # ① 构建去重 + 划分后的 JSONL
+│   │   ├── build_sliced.py         # ② 生成关键上下文切片字段
+│   │   ├── train.py                # ③ 多种子微调
+│   │   ├── tune_threshold.py       # ④ 验证集阈值校准
+│   │   ├── ensemble.py             # ⑤ 多种子软投票集成
+│   │   ├── compile_results.py      # 汇总全部实验对比表
+│   │   └── build_best_system.py    # 构建最优系统提升阶梯
+│   ├── data/processed/             # 处理后数据集（JSONL + stats.json）
+│   └── outputs/                    # 实验结果、图表与报告
+├── report/                         # 期末实验报告
+└── LICENSE
 ```
 
-### 流水线概览
+**流水线概览：**
 
-```mermaid
-flowchart LR
-    A[原始数据集] --> B[统一模式加载]
-    B --> C[去重 + 防泄漏划分]
-    C --> D[关键上下文抽取<br/>可选]
-    D --> E[类别加权微调<br/>3 seeds]
-    E --> F[阈值校准<br/>可选]
-    F --> G[指标聚合与对比]
+```
+原始数据集 → 去重 & 防泄漏划分 → [可选] 关键上下文切片
+          → 多种子微调 → 阈值校准 / 软投票集成 → 结果汇总
 ```
 
 ---
 
-## 🚀 快速开始
+## 🚀 Getting Started
 
 ### 1. 克隆仓库
 
@@ -79,71 +59,38 @@ git clone https://github.com/<your-org>/DeepVul-Lab.git
 cd DeepVul-Lab
 ```
 
-### 2. 创建并激活 Conda 环境
+### 2. 创建环境并安装依赖
 
 ```bash
-conda create -n deepvul_env python=3.10 -y
-conda activate deepvul_env
+conda create -n syssec_env python=3.10 -y
+conda activate syssec_env
+
+pip install torch transformers datasets numpy scipy matplotlib datasketch
 ```
 
-### 3. 安装核心依赖
+### 3. 预下载数据集与预训练模型
+
+脚本默认以离线模式运行（`HF_HUB_OFFLINE=1`），需提前缓存至本地：
 
 ```bash
-pip install torch transformers datasets huggingface_hub \
-    scikit-learn scipy numpy matplotlib datasketch libclang
+# 数据集
+huggingface-cli download DetectVul/devign
+huggingface-cli download claudios/DiverseVul
+
+# 预训练骨干（按需下载）
+huggingface-cli download microsoft/codebert-base
+huggingface-cli download claudios/VulBERTa-mlm
+huggingface-cli download microsoft/graphcodebert-base
+huggingface-cli download microsoft/unixcoder-base
 ```
 
-> 推荐使用 `transformers >= 5.1.0`。若使用 HuggingFace 镜像，可设置：
->
-> ```bash
-> export HF_ENDPOINT=https://hf-mirror.com
-> ```
-
-### 4. 一键初始化（下载数据集与模型）
+### 4. 快速运行示例
 
 ```bash
-bash code/scripts/user_setup.sh
-```
-
-该脚本将自动完成：
-- 安装 `libclang`（VulBERTa 自定义 tokenizer 所需）与 `datasketch`（近重复去重）
-- 下载 [DiverseVul](https://huggingface.co/datasets/claudios/DiverseVul) 数据集
-- 下载 [VulBERTa-mlm](https://huggingface.co/claudios/VulBERTa-mlm) 预训练权重
-
-### 5. 验证环境
-
-```bash
-# 冒烟测试：验证数据 → 分词 → 训练 → 评估链路
-python code/scripts/smoke_train.py
-
-# VulBERTa 兼容性检测
-python code/scripts/vulberta_load_test.py
-```
-
----
-
-## 📖 使用方法
-
-### 数据预处理
-
-```bash
-# 构建去重 + 划分后的数据集（输出至 code/data/processed/）
+# 构建处理后数据集（无需 GPU）
 python code/scripts/build_dataset.py
 
-# 可选：生成关键上下文切片字段 func_sliced
-python code/scripts/build_sliced.py
-
-# 分析函数长度与截断率
-python code/scripts/analyze_lengths.py
-```
-
-### 模型训练
-
-以下命令均在项目根目录下执行，且需先 `conda activate deepvul_env`。
-
-**CodeBERT 基线（完整函数）**
-
-```bash
+# 在 Devign 上微调 CodeBERT 基线（自动选取空闲 GPU）
 python code/scripts/train.py \
     --model microsoft/codebert-base \
     --dataset devign \
@@ -151,172 +98,132 @@ python code/scripts/train.py \
     --tag codebert_fullfunc
 ```
 
-**UniXcoder（结构感知预训练）**
+---
+
+## 📖 Usage
+
+所有命令均在仓库根目录、已激活 `syssec_env` 的环境下执行。
+
+### 数据准备
 
 ```bash
+# 去重 + 划分，输出至 code/data/processed/<dataset>/
+python code/scripts/build_dataset.py
+
+# 为每条记录追加 func_sliced / func_marked 字段（RQ2 关键上下文实验）
+python code/scripts/build_sliced.py
+```
+
+### 模型训练
+
+```bash
+# 基线：CodeBERT + 类别加权 CE
+python code/scripts/train.py \
+    --model microsoft/codebert-base \
+    --dataset diversevul \
+    --seeds 42 1 2 \
+    --tag codebert_fullfunc
+
+# 结构感知骨干：UniXcoder
 python code/scripts/train.py \
     --model microsoft/unixcoder-base \
     --dataset diversevul \
     --seeds 42 1 2 \
     --tag unixcoder_fullfunc
-```
 
-**关键上下文切片变体**
+# 更强不平衡处理：Focal Loss
+python code/scripts/train.py \
+    --model microsoft/unixcoder-base \
+    --dataset diversevul \
+    --loss-type focal \
+    --seeds 42 1 2 \
+    --tag unixcoder_focal
 
-```bash
+# 关键上下文切片输入（需先运行 build_sliced.py）
 python code/scripts/train.py \
     --model microsoft/codebert-base \
     --dataset diversevul \
     --text-field func_sliced \
     --seeds 42 1 2 \
     --tag codebert_sliced
-```
 
-**VulBERTa（领域自适应，需 trust-remote-code）**
-
-```bash
+# VulBERTa 需信任远程代码
 python code/scripts/train.py \
     --model claudios/VulBERTa-mlm \
-    --dataset devign \
+    --dataset diversevul \
     --trust-remote-code \
-    --tokenize-num-proc 4 \
     --seeds 42 1 2 \
     --tag vulberta_fullfunc
 ```
 
-训练结果保存在 `code/outputs/runs/<dataset>_<tag>/`，包含：
-- `summary.json`：多种子聚合指标（均值 ± 标准差）
-- `seed*/metrics.json`：逐种子测试集指标
-- `confusion_seed_first.png`：混淆矩阵可视化
-
-### 决策阈值校准
+### 后处理与结果汇总
 
 ```bash
+# 验证集阈值校准（不重训练）
 python code/scripts/tune_threshold.py \
     --run-dir code/outputs/runs/diversevul_codebert_fullfunc \
     --model microsoft/codebert-base \
     --dataset diversevul \
-    --text-field func \
-    --metric f1
-```
+    --metric mcc
 
-### 汇总实验结果
+# 3 种子软投票集成
+python code/scripts/ensemble.py \
+    --run-dir code/outputs/runs/diversevul_unixcoder_focal
 
-```bash
+# 汇总全部实验为对比表（Markdown / CSV / 柱状图）
 python code/scripts/compile_results.py
+
+# 构建最优系统提升阶梯（S0→S4）
+python code/scripts/build_best_system.py --threshold-metric mcc
+
+# 绘制提升阶梯图
+python code/scripts/plot_best_system.py
 ```
 
-输出 `code/outputs/results_table.md`、`results_table.csv` 及分组柱状图，便于跨实验横向对比。
-
-### 主要命令行参数
+### 主要 CLI 参数速查
 
 | 脚本 | 关键参数 | 说明 |
 |---|---|---|
-| `train.py` | `--model` | HuggingFace 模型 ID 或本地路径 |
-| | `--dataset` | `devign` 或 `diversevul` |
-| | `--tag` | 实验标签，用于输出目录命名 |
-| | `--text-field` | 输入字段：`func`（默认）/ `func_sliced` / `func_marked` |
-| | `--seeds` | 随机种子列表，默认 `42 1 2` |
-| | `--max-len` | 最大序列长度，默认 512 |
-| | `--epochs` | 训练轮数，默认 4 |
-| `tune_threshold.py` | `--run-dir` | 已训练实验的输出目录 |
-| | `--metric` | 优化目标：`f1` 或 `mcc` |
+| `train.py` | `--model`, `--dataset`, `--tag`, `--seeds` | 微调骨干并聚合多种子指标 |
+| `train.py` | `--loss-type`, `--sampler` | `focal` / `oversample` 等不平衡策略 |
+| `train.py` | `--text-field` | 输入字段：`func`（默认）或 `func_sliced` |
+| `tune_threshold.py` | `--metric` | 验证集上优化的目标：`f1` 或 `mcc` |
+| `ensemble.py` | `--tune-metric` | 可选：在集成概率上再调阈值 |
+
+训练产物保存在 `code/outputs/runs/<dataset>_<tag>/`，包含 `summary.json`、各种子 `metrics.json` 与 `test_logits.npy`。
 
 ---
 
-## 📊 评价指标
-
-鉴于漏洞数据集普遍存在类别不平衡，本项目以以下指标为主：
-
-| 指标 | 含义 |
-|---|---|
-| **F1** | 查准率与查全率的调和平均 |
-| **MCC** | Matthews 相关系数，对混淆矩阵四象限均敏感 |
-| **PR-AUC** | 平均精度，刻画与阈值无关的排序能力 |
-| **ROC-AUC** | 受试者工作特征曲线下面积 |
-
-类别加权损失函数基于训练集逆频率：
-
-$$\mathcal{L} = -\sum_{i} w_{y_i} \log p(y_i \mid x_i), \quad w_c = \frac{N}{K \cdot n_c}$$
-
-其中 $N$ 为训练样本总数，$K$ 为类别数，$n_c$ 为类别 $c$ 的样本数。
-
----
-
-## 💻 环境要求
+## 💻 Requirements
 
 ### 硬件
 
-| 组件 | 最低要求 | 推荐配置 |
-|---|---|---|
-| **GPU** | NVIDIA GPU，显存 ≥ 16 GB | NVIDIA A100（32 GB+） |
-| **内存** | 32 GB RAM | 64 GB+ |
-| **磁盘** | 50 GB 可用空间 | 100 GB+（含数据集与模型缓存） |
+| 组件 | 建议配置 |
+|---|---|
+| GPU | NVIDIA GPU，显存 ≥ 20 GB（RoBERTa-base 级骨干，batch size 32） |
+| 内存 | ≥ 32 GB（DiverseVul 去重与分词缓存） |
+| 磁盘 | ≥ 50 GB（数据集缓存 + 分词缓存 + 检查点） |
 
 ### 软件
 
-| 依赖 | 版本建议 |
+| 依赖 | 用途 |
 |---|---|
-| Python | 3.10+ |
-| PyTorch | 2.0+（含 CUDA 支持） |
-| transformers | ≥ 5.1.0 |
-| datasets | ≥ 2.14 |
-| scikit-learn | ≥ 1.3 |
-| scipy | ≥ 1.11 |
-| libclang | 最新版（VulBERTa 必需） |
-| datasketch | 最新版（近重复去重） |
-| CUDA | 11.8+ / 12.x |
+| Python ≥ 3.10 | 运行环境 |
+| PyTorch | 模型训练与推理 |
+| Hugging Face `transformers` / `datasets` | 预训练模型与数据集加载 |
+| NumPy / SciPy | 数值计算与概率变换 |
+| Matplotlib | 混淆矩阵与对比图表 |
+| datasketch | MinHash LSH 近重复去重 |
 
 ### 数据集
 
-| 数据集 | 来源 | 特点 |
+| 数据集 | Hugging Face 仓库 | 特点 |
 |---|---|---|
-| **Devign** | [DetectVul/devign](https://huggingface.co/datasets/DetectVul/devign) | FFmpeg + QEMU，类别近似均衡（~45% 正样本） |
-| **DiverseVul** | [claudios/DiverseVul](https://huggingface.co/datasets/claudios/DiverseVul) | 310 个项目，强不平衡（~7% 正样本） |
-
-> 所有脚本默认以离线模式运行（`HF_HUB_OFFLINE=1`），请确保数据集与模型已预先下载至本地 HuggingFace 缓存。
+| Devign | `DetectVul/devign` | FFmpeg + QEMU，近均衡（正样本率 ~46%） |
+| DiverseVul | `claudios/DiverseVul` | 310 个项目，强不平衡（正样本率 ~7%） |
 
 ---
 
-## 📄 实验报告
-
-完整的实验设计、结果分析与结论请参阅 [`report/期末实验报告.md`](report/期末实验报告.md)。
-
-核心发现摘要：
-- 在去重与项目级划分的硬协议下，**结构感知预训练（UniXcoder）** 带来跨数据集一致的稳健提升
-- 领域自适应预训练（VulBERTa）未能优于通用 CodeBERT 基线
-- 关键上下文抽取虽降低截断率，但未转化为指标提升
-- 决策阈值校准仅移动工作点，无法改善排序能力（PR-AUC）
-
----
-
-## 📜 License
+## 📄 License
 
 本项目采用 [MIT License](LICENSE) 开源协议。
-
-```
-MIT License
-
-Copyright (c) 2026 DeepVul-Lab Contributors
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-```
-
----
-
