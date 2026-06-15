@@ -1,0 +1,22 @@
+{
+  "accuracy": 0.7622871827818825,
+  "balanced_accuracy": 0.6672078771253683,
+  "precision": 0.15607012035583465,
+  "recall": 0.5569561157796452,
+  "f1": 0.24381769875332107,
+  "mcc": 0.19667117881006252,
+  "tn": 22537,
+  "fp": 6451,
+  "fn": 949,
+  "tp": 1193,
+  "roc_auc": 0.7321423498335445,
+  "pr_auc": 0.18120812385103144,
+  "model": "microsoft/unixcoder-base",
+  "dataset": "diversevul",
+  "seed": 1,
+  "max_len": 512,
+  "epochs": 4,
+  "text_field": "func",
+  "loss_type": "focal",
+  "sampler": "none"
+}

@@ -24,7 +24,8 @@ import numpy as np
 ROOT = Path(__file__).resolve().parents[1]
 RUNS = ROOT / "outputs" / "runs"
 OUT = ROOT / "outputs"
-METRICS = ["accuracy", "precision", "recall", "f1", "mcc", "roc_auc", "pr_auc"]
+METRICS = ["accuracy", "balanced_accuracy", "precision", "recall", "f1", "mcc",
+           "roc_auc", "pr_auc"]
 BAR_METRICS = ["f1", "mcc", "pr_auc", "roc_auc"]
 
 

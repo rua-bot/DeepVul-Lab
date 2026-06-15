@@ -1,0 +1,20 @@
+{
+  "run_dir": "/data/home/Liheng/workspace/System_Security/DeepVul-Lab/code/outputs/runs/diversevul_unixcoder_fullfunc",
+  "n_seeds": 3,
+  "method": "soft_vote_mean_prob",
+  "ensemble_default": {
+    "threshold": 0.5,
+    "accuracy": 0.8025698682942499,
+    "balanced_accuracy": 0.6585725707421094,
+    "precision": 0.1723404255319149,
+    "recall": 0.49159663865546216,
+    "f1": 0.25521085797382453,
+    "mcc": 0.20212157063306216,
+    "tn": 23931,
+    "fp": 5057,
+    "fn": 1089,
+    "tp": 1053,
+    "roc_auc": 0.7367453443821759,
+    "pr_auc": 0.1831397257755197
+  }
+}

@@ -12,6 +12,7 @@ from scipy.special import softmax
 from sklearn.metrics import (
     accuracy_score,
     average_precision_score,
+    balanced_accuracy_score,
     confusion_matrix,
     f1_score,
     matthews_corrcoef,
@@ -40,6 +41,7 @@ def metrics_from_logits(logits: np.ndarray, labels: np.ndarray) -> dict:
     tn, fp, fn, tp = confusion_matrix(labels, preds, labels=[0, 1]).ravel()
     out = {
         "accuracy": accuracy_score(labels, preds),
+        "balanced_accuracy": balanced_accuracy_score(labels, preds),
         "precision": precision_score(labels, preds, zero_division=0),
         "recall": recall_score(labels, preds, zero_division=0),
         "f1": f1_score(labels, preds, zero_division=0),
@@ -82,6 +84,7 @@ def metrics_at_threshold(pos_prob: np.ndarray, labels: np.ndarray, threshold: fl
     out = {
         "threshold": float(threshold),
         "accuracy": accuracy_score(labels, preds),
+        "balanced_accuracy": balanced_accuracy_score(labels, preds),
         "precision": precision_score(labels, preds, zero_division=0),
         "recall": recall_score(labels, preds, zero_division=0),
         "f1": f1_score(labels, preds, zero_division=0),

@@ -13,14 +13,17 @@ from the training split), which matters for the highly imbalanced DiverseVul.
 from __future__ import annotations
 
 import json
+import os
 import re
+import shutil
+import tempfile
 from collections import Counter
 from pathlib import Path
 
 import numpy as np
 import torch
 import torch.nn.functional as F
-from datasets import load_from_disk
+from datasets import concatenate_datasets, load_from_disk
 from transformers import (
     AutoModelForSequenceClassification,
     AutoTokenizer,
@@ -104,12 +107,20 @@ def get_tokenized(
         attention_mask, labels).
     """
     cache_dir = TOKENIZED_ROOT / f"{dataset}__{_sanitize(model_name)}__len{max_len}__{text_field}"
-    splits = {}
-    if cache_dir.exists():
-        for split in ("train", "validation", "test"):
-            splits[split] = load_from_disk(str(cache_dir / split))
-        return splits
 
+    def _valid(d: Path) -> bool:
+        return all((d / s).exists() for s in ("train", "validation", "test"))
+
+    def _load(d: Path) -> dict:
+        return {s: load_from_disk(str(d / s)) for s in ("train", "validation", "test")}
+
+    if _valid(cache_dir):
+        return _load(cache_dir)
+
+    # Build into a private temp dir, then atomically publish via os.replace so
+    # that concurrent jobs sharing a cache key cannot read or write a partially
+    # built cache. If another process publishes first, discard our temp copy.
+    TOKENIZED_ROOT.mkdir(parents=True, exist_ok=True)
     raw = load_processed(dataset)
     fn_kwargs = {
         "model_name": model_name,
@@ -117,6 +128,8 @@ def get_tokenized(
         "text_field": text_field,
         "max_len": max_len,
     }
+    tmp_dir = Path(tempfile.mkdtemp(prefix=cache_dir.name + ".tmp.", dir=TOKENIZED_ROOT))
+    splits = {}
     for name, ds in raw.items():
         ds = ds.map(
             _worker_tokenize,
@@ -125,9 +138,17 @@ def get_tokenized(
             num_proc=num_proc if num_proc > 1 else None,
             remove_columns=ds.column_names,
         )
-        ds.save_to_disk(str(cache_dir / name))
+        ds.save_to_disk(str(tmp_dir / name))
         splits[name] = ds
-    return splits
+
+    if _valid(cache_dir):
+        shutil.rmtree(tmp_dir, ignore_errors=True)
+    else:
+        try:
+            os.replace(tmp_dir, cache_dir)
+        except OSError:
+            shutil.rmtree(tmp_dir, ignore_errors=True)
+    return _load(cache_dir) if _valid(cache_dir) else splits
 
 
 class PadCollator:
@@ -174,20 +195,69 @@ class PadCollator:
         }
 
 
-class WeightedTrainer(Trainer):
-    """Trainer variant using class-weighted cross-entropy loss."""
+def focal_loss(
+    logits: torch.Tensor,
+    labels: torch.Tensor,
+    gamma: float,
+    alpha: torch.Tensor | None = None,
+) -> torch.Tensor:
+    """Multi-class focal loss with optional per-class alpha weighting.
 
-    def __init__(self, *args, class_weights: torch.Tensor | None = None, **kwargs):
-        """Store optional class weights, then defer to the base Trainer.
+    Focal loss down-weights well-classified examples by a factor of
+    ``(1 - p_t) ** gamma``, focusing training on the hard, often minority-class
+    examples. With ``gamma == 0`` it reduces to (weighted) cross-entropy.
+
+    Args:
+        logits: Class logits of shape (n, 2).
+        labels: Ground-truth labels of shape (n,).
+        gamma: Focusing parameter (>= 0); larger values focus more on hard cases.
+        alpha: Optional per-class weight tensor of shape (2,).
+
+    Returns:
+        Scalar mean focal loss.
+    """
+    logp = F.log_softmax(logits, dim=-1)
+    logp_t = logp.gather(1, labels.unsqueeze(1)).squeeze(1)
+    p_t = logp_t.exp()
+    loss = -((1.0 - p_t) ** gamma) * logp_t
+    if alpha is not None:
+        loss = alpha.gather(0, labels) * loss
+    return loss.mean()
+
+
+class WeightedTrainer(Trainer):
+    """Trainer variant supporting class-weighted CE or focal loss.
+
+    The loss is selected by ``loss_type``:
+      - ``"ce_weighted"``: cross-entropy weighted by inverse class frequency.
+      - ``"focal"``: focal loss with ``focal_gamma`` and ``class_weights`` as the
+        per-class alpha (set ``class_weights=None`` for unweighted focal).
+      - ``"ce"``: plain unweighted cross-entropy (used with oversampling so the
+        minority class is not corrected twice).
+    """
+
+    def __init__(
+        self,
+        *args,
+        class_weights: torch.Tensor | None = None,
+        loss_type: str = "ce_weighted",
+        focal_gamma: float = 2.0,
+        **kwargs,
+    ):
+        """Store loss configuration, then defer to the base Trainer.
 
         Args:
             class_weights: Tensor of per-class weights, or None for unweighted.
+            loss_type: One of "ce_weighted", "focal", "ce".
+            focal_gamma: Focusing parameter for focal loss.
         """
         super().__init__(*args, **kwargs)
         self.class_weights = class_weights
+        self.loss_type = loss_type
+        self.focal_gamma = focal_gamma
 
     def compute_loss(self, model, inputs, return_outputs=False, **kwargs):
-        """Compute class-weighted cross-entropy loss.
+        """Compute the configured classification loss.
 
         Args:
             model: The model being trained.
@@ -200,8 +270,14 @@ class WeightedTrainer(Trainer):
         """
         labels = inputs.pop("labels")
         outputs = model(**inputs)
-        weight = self.class_weights.to(outputs.logits.device) if self.class_weights is not None else None
-        loss = F.cross_entropy(outputs.logits, labels, weight=weight)
+        logits = outputs.logits
+        weight = self.class_weights.to(logits.device) if self.class_weights is not None else None
+        if self.loss_type == "focal":
+            loss = focal_loss(logits, labels, gamma=self.focal_gamma, alpha=weight)
+        elif self.loss_type == "ce":
+            loss = F.cross_entropy(logits, labels)
+        else:
+            loss = F.cross_entropy(logits, labels, weight=weight)
         return (loss, outputs) if return_outputs else loss
 
 
@@ -220,6 +296,38 @@ def compute_class_weights(labels: list[int]) -> torch.Tensor:
     return torch.tensor(weights, dtype=torch.float)
 
 
+def oversample_minority(train_ds, seed: int):
+    """Duplicate minority-class rows so the training set is class-balanced.
+
+    Random oversampling is an alternative to loss reweighting: instead of scaling
+    the loss, the minority class is physically repeated until both classes are
+    roughly equinumerous. It is applied only to the training split and should be
+    paired with an unweighted loss to avoid correcting the imbalance twice.
+
+    Args:
+        train_ds: Tokenized training Dataset with a "labels" column.
+        seed: Seed for the final shuffle.
+
+    Returns:
+        A new shuffled Dataset with the minority class oversampled to balance.
+    """
+    labels = list(train_ds["labels"])
+    counts = Counter(labels)
+    if len(counts) < 2:
+        return train_ds
+    majority = max(counts, key=counts.get)
+    n_major = counts[majority]
+    parts = [train_ds]
+    for cls, n_cls in counts.items():
+        if cls == majority or n_cls == 0:
+            continue
+        idx = [i for i, y in enumerate(labels) if y == cls]
+        deficit = n_major - n_cls
+        reps = [idx[i % len(idx)] for i in range(deficit)]
+        parts.append(train_ds.select(reps))
+    return concatenate_datasets(parts).shuffle(seed=seed)
+
+
 def run_experiment(
     model_name: str,
     dataset: str,
@@ -233,6 +341,9 @@ def run_experiment(
     lr: float = 2e-5,
     weight_decay: float = 0.01,
     use_class_weights: bool = True,
+    loss_type: str = "ce_weighted",
+    focal_gamma: float = 2.0,
+    sampler: str = "none",
     trust_remote_code: bool = False,
     tokenize_num_proc: int = 1,
 ) -> dict:
@@ -251,6 +362,11 @@ def run_experiment(
         lr: Learning rate.
         weight_decay: Weight decay.
         use_class_weights: Whether to weight the loss by inverse class frequency.
+        loss_type: Loss to optimize ("ce_weighted", "focal", or "ce").
+        focal_gamma: Focusing parameter when ``loss_type == "focal"``.
+        sampler: Training sampling strategy ("none" or "oversample"). When
+            "oversample", the minority class is duplicated to balance the train
+            split; pair it with an unweighted loss (handled automatically below).
         trust_remote_code: Pass through for models with custom code (e.g. VulBERTa).
         tokenize_num_proc: Worker processes for the (cached) tokenization step.
 
@@ -266,6 +382,16 @@ def run_experiment(
         dataset, model_name, max_len, text_field,
         num_proc=tokenize_num_proc, trust_remote_code=trust_remote_code,
     )
+
+    # Random oversampling balances the train split by duplicating minority rows.
+    # It is mutually exclusive with loss reweighting (to avoid double-correcting),
+    # so when oversampling we drop class weights and use the requested/plain loss.
+    if sampler == "oversample":
+        tok_splits = dict(tok_splits)
+        tok_splits["train"] = oversample_minority(tok_splits["train"], seed)
+        use_class_weights = False
+        if loss_type == "ce_weighted":
+            loss_type = "ce"
 
     keep = ["input_ids", "attention_mask", "labels"]
     tokenized = {
@@ -314,6 +440,8 @@ def run_experiment(
         data_collator=PadCollator(pad_id),
         compute_metrics=make_compute_metrics(),
         class_weights=class_weights,
+        loss_type=loss_type,
+        focal_gamma=focal_gamma,
     )
 
     trainer.train()
@@ -322,7 +450,8 @@ def run_experiment(
     test_metrics = metrics_from_logits(pred.predictions, pred.label_ids)
     test_metrics.update(
         {"model": model_name, "dataset": dataset, "seed": seed,
-         "max_len": max_len, "epochs": epochs, "text_field": text_field}
+         "max_len": max_len, "epochs": epochs, "text_field": text_field,
+         "loss_type": loss_type, "sampler": sampler}
     )
     (output_dir / "metrics.json").write_text(json.dumps(test_metrics, indent=2))
     np.save(output_dir / "test_logits.npy", pred.predictions)

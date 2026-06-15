@@ -1,0 +1,20 @@
+{
+  "run_dir": "/data/home/Liheng/workspace/System_Security/DeepVul-Lab/code/outputs/runs/devign_unixcoder_fullfunc",
+  "n_seeds": 3,
+  "method": "soft_vote_mean_prob",
+  "ensemble_default": {
+    "threshold": 0.5,
+    "accuracy": 0.6657661134697028,
+    "balanced_accuracy": 0.6706982903057273,
+    "precision": 0.6124197002141327,
+    "recall": 0.7265029635901779,
+    "f1": 0.6646010844306739,
+    "mcc": 0.341193794472043,
+    "tn": 867,
+    "fp": 543,
+    "fn": 323,
+    "tp": 858,
+    "roc_auc": 0.7544159595486455,
+    "pr_auc": 0.7471291087153333
+  }
+}

@@ -41,7 +41,8 @@ import numpy as np  # noqa: E402
 
 from training.experiment import run_experiment  # noqa: E402
 
-AGG_METRICS = ["accuracy", "precision", "recall", "f1", "mcc", "roc_auc", "pr_auc"]
+AGG_METRICS = ["accuracy", "balanced_accuracy", "precision", "recall", "f1", "mcc",
+               "roc_auc", "pr_auc"]
 
 
 def parse_args():
@@ -58,6 +59,13 @@ def parse_args():
     p.add_argument("--eval-batch-size", type=int, default=64)
     p.add_argument("--lr", type=float, default=2e-5)
     p.add_argument("--no-class-weights", action="store_true")
+    p.add_argument("--loss-type", default="ce_weighted",
+                   choices=["ce_weighted", "focal", "ce"],
+                   help="Training loss: inverse-freq weighted CE / focal / plain CE")
+    p.add_argument("--focal-gamma", type=float, default=2.0,
+                   help="Focusing parameter when --loss-type focal")
+    p.add_argument("--sampler", default="none", choices=["none", "oversample"],
+                   help="Training sampler; 'oversample' balances classes by duplication")
     p.add_argument("--trust-remote-code", action="store_true")
     p.add_argument("--tokenize-num-proc", type=int, default=1,
                    help="Workers for the cached tokenization step (speeds up slow tokenizers)")
@@ -128,6 +136,9 @@ def main():
             eval_batch_size=args.eval_batch_size,
             lr=args.lr,
             use_class_weights=not args.no_class_weights,
+            loss_type=args.loss_type,
+            focal_gamma=args.focal_gamma,
+            sampler=args.sampler,
             trust_remote_code=args.trust_remote_code,
             tokenize_num_proc=args.tokenize_num_proc,
         )
@@ -145,6 +156,8 @@ def main():
             "max_len": args.max_len, "epochs": args.epochs, "lr": args.lr,
             "train_batch_size": args.train_batch_size,
             "class_weights": not args.no_class_weights, "text_field": args.text_field,
+            "loss_type": args.loss_type, "focal_gamma": args.focal_gamma,
+            "sampler": args.sampler,
         },
         "aggregate": agg,
         "per_seed": per_seed,

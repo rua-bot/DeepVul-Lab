@@ -61,3 +61,11 @@ code/data/tokenized/
 secrets/
 *.pem
 *.key
+
+# ── Training artifacts (reproducible via train.py) ──────────────────────────
+code/outputs/runs/**/checkpoints/
+code/outputs/runs/**/optimizer.pt
+code/outputs/runs/**/scheduler.pt
+code/outputs/runs/**/rng_state.pth
+code/outputs/runs/**/model.safetensors
+code/outputs/runs/**/training_args.bin

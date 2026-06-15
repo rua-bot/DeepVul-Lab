@@ -1,0 +1,20 @@
+{
+  "run_dir": "/data/home/Liheng/workspace/System_Security/DeepVul-Lab/code/outputs/runs/diversevul_unixcoder_focal",
+  "n_seeds": 3,
+  "method": "soft_vote_mean_prob",
+  "ensemble_default": {
+    "threshold": 0.5,
+    "accuracy": 0.7873755220044972,
+    "balanced_accuracy": 0.6638170699952857,
+    "precision": 0.16624422245415238,
+    "recall": 0.5205415499533147,
+    "f1": 0.2520058763702113,
+    "mcc": 0.201717859603524,
+    "tn": 23396,
+    "fp": 5592,
+    "fn": 1027,
+    "tp": 1115,
+    "roc_auc": 0.7385534672449542,
+    "pr_auc": 0.18518053019286684
+  }
+}

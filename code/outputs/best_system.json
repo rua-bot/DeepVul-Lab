@@ -1,0 +1,106 @@
+{
+  "devign": [
+    {
+      "step": "S0",
+      "config": "CodeBERT baseline",
+      "accuracy": 0.644667438569407,
+      "balanced_accuracy": NaN,
+      "f1": 0.5858122010798502,
+      "mcc": 0.2845623948613514,
+      "roc_auc": 0.7183428316348488,
+      "pr_auc": 0.7093021015591362
+    },
+    {
+      "step": "S1",
+      "config": "+ structure backbone (UniXcoder)",
+      "accuracy": 0.6597195420043741,
+      "balanced_accuracy": NaN,
+      "f1": 0.6566233761107241,
+      "mcc": 0.32852362897643556,
+      "roc_auc": 0.7455979526105816,
+      "pr_auc": 0.7392035330966514
+    },
+    {
+      "step": "S2",
+      "config": "+ best imbalance [UniXcoder + focal loss]",
+      "accuracy": 0.6402933230412967,
+      "balanced_accuracy": 0.6489671973304668,
+      "f1": 0.6544041061075735,
+      "mcc": 0.3012771919430464,
+      "roc_auc": 0.7327340095243242,
+      "pr_auc": 0.7279251562916862
+    },
+    {
+      "step": "S3",
+      "config": "+ val-tuned threshold (mcc)",
+      "accuracy": 0.6328315965521678,
+      "balanced_accuracy": 0.5985633443629732,
+      "f1": 0.3435018085399266,
+      "mcc": 0.3220720921324333,
+      "roc_auc": 0.7325529512794183,
+      "pr_auc": 0.7278232428749257
+    },
+    {
+      "step": "S4",
+      "config": "+ 3-seed ensemble (final)",
+      "accuracy": 0.6418371285218063,
+      "balanced_accuracy": 0.6513253583632095,
+      "f1": 0.6588235294117647,
+      "mcc": 0.30693685018980893,
+      "roc_auc": 0.7402699959764835,
+      "pr_auc": 0.7357017624692515
+    }
+  ],
+  "diversevul": [
+    {
+      "step": "S0",
+      "config": "CodeBERT baseline",
+      "accuracy": 0.8091658635828246,
+      "balanced_accuracy": NaN,
+      "f1": 0.22546768947005083,
+      "mcc": 0.16144105505307418,
+      "roc_auc": 0.7127793492019258,
+      "pr_auc": 0.15763481586962355
+    },
+    {
+      "step": "S1",
+      "config": "+ structure backbone (UniXcoder)",
+      "accuracy": 0.7898383124531535,
+      "balanced_accuracy": NaN,
+      "f1": 0.2448552981032008,
+      "mcc": 0.19122788606928962,
+      "roc_auc": 0.7299656063612142,
+      "pr_auc": 0.17511301444065894
+    },
+    {
+      "step": "S2",
+      "config": "+ best imbalance [UniXcoder + focal loss]",
+      "accuracy": 0.777877717100332,
+      "balanced_accuracy": 0.6600863870991875,
+      "f1": 0.2452307331663587,
+      "mcc": 0.19439237116318073,
+      "roc_auc": 0.7317461466287756,
+      "pr_auc": 0.17749330980677536
+    },
+    {
+      "step": "S3",
+      "config": "+ val-tuned threshold (mcc)",
+      "accuracy": 0.7982225077631439,
+      "balanced_accuracy": 0.6528514798894429,
+      "f1": 0.24901915159861068,
+      "mcc": 0.19455097387306064,
+      "roc_auc": 0.7318689289033,
+      "pr_auc": 0.1777196807306062
+    },
+    {
+      "step": "S4",
+      "config": "+ 3-seed ensemble (final)",
+      "accuracy": 0.7873755220044972,
+      "balanced_accuracy": 0.6638170699952857,
+      "f1": 0.2520058763702113,
+      "mcc": 0.201717859603524,
+      "roc_auc": 0.7385534672449542,
+      "pr_auc": 0.18518053019286684
+    }
+  ]
+}

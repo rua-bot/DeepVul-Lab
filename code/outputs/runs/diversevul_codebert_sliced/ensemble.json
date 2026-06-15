@@ -1,0 +1,20 @@
+{
+  "run_dir": "/data/home/Liheng/workspace/System_Security/DeepVul-Lab/code/outputs/runs/diversevul_codebert_sliced",
+  "n_seeds": 3,
+  "method": "soft_vote_mean_prob",
+  "ensemble_default": {
+    "threshold": 0.5,
+    "accuracy": 0.8089945390298747,
+    "balanced_accuracy": 0.6352161788315897,
+    "precision": 0.16407629812787,
+    "recall": 0.43370681605975725,
+    "f1": 0.2380830343413634,
+    "mcc": 0.17745782767759288,
+    "tn": 24255,
+    "fp": 4733,
+    "fn": 1213,
+    "tp": 929,
+    "roc_auc": 0.7169243910709953,
+    "pr_auc": 0.1674939847550966
+  }
+}

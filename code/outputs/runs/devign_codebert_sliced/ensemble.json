@@ -1,0 +1,20 @@
+{
+  "run_dir": "/data/home/Liheng/workspace/System_Security/DeepVul-Lab/code/outputs/runs/devign_codebert_sliced",
+  "n_seeds": 3,
+  "method": "soft_vote_mean_prob",
+  "ensemble_default": {
+    "threshold": 0.5,
+    "accuracy": 0.6426090312620609,
+    "balanced_accuracy": 0.6382137988602038,
+    "precision": 0.6123348017621145,
+    "recall": 0.5884843353090601,
+    "f1": 0.6001727115716753,
+    "mcc": 0.27748357837061005,
+    "tn": 970,
+    "fp": 440,
+    "fn": 486,
+    "tp": 695,
+    "roc_auc": 0.7039784771890631,
+    "pr_auc": 0.6900564010025987
+  }
+}

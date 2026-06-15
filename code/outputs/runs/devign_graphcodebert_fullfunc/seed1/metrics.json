@@ -1,0 +1,22 @@
+{
+  "accuracy": 0.6576611346970281,
+  "balanced_accuracy": 0.6543126692729446,
+  "precision": 0.6265060240963856,
+  "recall": 0.6164267569856055,
+  "f1": 0.6214255228339736,
+  "mcc": 0.30906292184298556,
+  "tn": 976,
+  "fp": 434,
+  "fn": 453,
+  "tp": 728,
+  "roc_auc": 0.7336393007488544,
+  "pr_auc": 0.7238504297726701,
+  "model": "microsoft/graphcodebert-base",
+  "dataset": "devign",
+  "seed": 1,
+  "max_len": 512,
+  "epochs": 4,
+  "text_field": "func",
+  "loss_type": "ce_weighted",
+  "sampler": "none"
+}

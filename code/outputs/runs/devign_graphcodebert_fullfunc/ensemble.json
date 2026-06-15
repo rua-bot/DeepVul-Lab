@@ -1,0 +1,20 @@
+{
+  "run_dir": "/data/home/Liheng/workspace/System_Security/DeepVul-Lab/code/outputs/runs/devign_graphcodebert_fullfunc",
+  "n_seeds": 3,
+  "method": "soft_vote_mean_prob",
+  "ensemble_default": {
+    "threshold": 0.5,
+    "accuracy": 0.659590891547665,
+    "balanced_accuracy": 0.6571171203631974,
+    "precision": 0.6259477674810446,
+    "recall": 0.6291278577476714,
+    "f1": 0.6275337837837838,
+    "mcc": 0.31410807279202146,
+    "tn": 966,
+    "fp": 444,
+    "fn": 438,
+    "tp": 743,
+    "roc_auc": 0.7384179773121708,
+    "pr_auc": 0.7282899879485393
+  }
+}

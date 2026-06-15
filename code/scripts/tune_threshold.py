@@ -48,7 +48,8 @@ from transformers import AutoModelForSequenceClassification, AutoTokenizer  # no
 from metrics import best_threshold, metrics_at_threshold  # noqa: E402
 from training.experiment import PadCollator, get_tokenized  # noqa: E402
 
-AGG_METRICS = ["accuracy", "precision", "recall", "f1", "mcc", "roc_auc", "pr_auc"]
+AGG_METRICS = ["accuracy", "balanced_accuracy", "precision", "recall", "f1", "mcc",
+               "roc_auc", "pr_auc"]
 
 
 def parse_args():
@@ -142,7 +143,7 @@ def main():
     test_ds = tok_splits["test"].with_format(
         "torch", columns=[c for c in keep if c in tok_splits["test"].column_names])
 
-    default_seed, tuned_seed, thresholds = [], [], []
+    default_seed, tuned_seed, thresholds, val_seed = [], [], [], []
     for seed_dir in seed_dirs:
         ckpt = find_checkpoint(seed_dir)
         model = AutoModelForSequenceClassification.from_pretrained(
@@ -153,6 +154,10 @@ def main():
 
         t = best_threshold(val_prob, val_lab, metric=args.metric)
         thresholds.append(t)
+        # Validation metrics at the default threshold support honest model
+        # selection (e.g. choosing the best imbalance method) without peeking
+        # at the test split.
+        val_seed.append(metrics_at_threshold(val_prob, val_lab, 0.5))
         default_seed.append(metrics_at_threshold(test_prob, test_lab, 0.5))
         tuned_seed.append(metrics_at_threshold(test_prob, test_lab, t))
         print(f"  {seed_dir.name}: tuned threshold={t:.3f} "
@@ -169,8 +174,10 @@ def main():
         "text_field": args.text_field,
         "tuned_on": f"validation ({args.metric})",
         "thresholds": thresholds,
+        "validation_default": aggregate(val_seed),
         "default": aggregate(default_seed),
         "tuned": aggregate(tuned_seed),
+        "validation_default_per_seed": val_seed,
         "default_per_seed": default_seed,
         "tuned_per_seed": tuned_seed,
     }
@@ -178,10 +185,10 @@ def main():
     out.write_text(json.dumps(summary, indent=2))
 
     print(f"\n==== {run_dir.name}: default(0.5) vs tuned(val-{args.metric}) test metrics ====")
-    print(f"{'metric':<10} {'default':>18} {'tuned':>18}")
-    for m in ["accuracy", "precision", "recall", "f1", "mcc"]:
+    print(f"{'metric':<18} {'default':>18} {'tuned':>18}")
+    for m in ["accuracy", "balanced_accuracy", "precision", "recall", "f1", "mcc"]:
         d, tt = summary["default"][m], summary["tuned"][m]
-        print(f"{m:<10} {d['mean']:.4f} +/- {d['std']:.4f}   {tt['mean']:.4f} +/- {tt['std']:.4f}")
+        print(f"{m:<18} {d['mean']:.4f} +/- {d['std']:.4f}   {tt['mean']:.4f} +/- {tt['std']:.4f}")
     print(f"mean tuned threshold: {np.mean(thresholds):.3f}")
     print(f"\nSaved to {out}")
 

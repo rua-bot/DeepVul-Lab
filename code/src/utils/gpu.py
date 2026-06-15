@@ -61,6 +61,18 @@ def select_free_gpu(min_free_mib: int = 10_000, set_env: bool = True, verbose: b
     Returns:
         The chosen physical GPU index.
     """
+    # Explicit override for parallel launches on a shared box: when DEEPVUL_GPU
+    # is set, pin to it directly and skip free-memory selection so concurrent
+    # jobs do not race for the same card.
+    forced = os.environ.get("DEEPVUL_GPU")
+    if forced is not None and forced != "":
+        idx = int(forced)
+        if set_env:
+            os.environ["CUDA_VISIBLE_DEVICES"] = str(idx)
+        if verbose:
+            print(f"DEEPVUL_GPU set: pinning to physical GPU {idx} (seen as cuda:0)")
+        return idx
+
     gpus = query_gpus()
     if not gpus:
         raise RuntimeError("nvidia-smi returned no GPUs")
